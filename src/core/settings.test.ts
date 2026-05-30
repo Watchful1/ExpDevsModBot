@@ -76,4 +76,47 @@ describe('settings.resolveFromRaw', () => {
       SETTING_DEFAULTS.engagementWindowMinutes
     );
   });
+
+  it('accepts shadow+ for the three multi-mode features', () => {
+    const r = _resolveForTests({
+      flairMode: 'shadow+',
+      engagementMode: ['shadow+'],
+      minKarmaMode: 'shadow+',
+    });
+    expect(r.flairMode).toBe('shadow+');
+    expect(r.engagementMode).toBe('shadow+');
+    expect(r.minKarmaMode).toBe('shadow+');
+  });
+
+  it('accepts on+ for all four features', () => {
+    const r = _resolveForTests({
+      aiGateMode: 'on+',
+      flairMode: ['on+'],
+      engagementMode: 'on+',
+      minKarmaMode: 'on+',
+    });
+    expect(r.aiGateMode).toBe('on+');
+    expect(r.flairMode).toBe('on+');
+    expect(r.engagementMode).toBe('on+');
+    expect(r.minKarmaMode).toBe('on+');
+  });
+
+  it('rejects shadow+ for the binary aiGateMode', () => {
+    const r = _resolveForTests({ aiGateMode: 'shadow+' });
+    expect(r.aiGateMode).toBe(SETTING_DEFAULTS.aiGateMode);
+  });
+
+  it('coerces discordWebhookUrl as a string', () => {
+    const r = _resolveForTests({
+      discordWebhookUrl: 'https://discord.com/api/webhooks/123/abc',
+    });
+    expect(r.discordWebhookUrl).toBe(
+      'https://discord.com/api/webhooks/123/abc'
+    );
+  });
+
+  it('falls back to empty string when discordWebhookUrl is missing', () => {
+    const r = _resolveForTests({});
+    expect(r.discordWebhookUrl).toBe('');
+  });
 });

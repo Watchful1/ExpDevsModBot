@@ -19,6 +19,7 @@ export type ResolvedSettings = {
   minKarmaThreshold: number;
   engagementWindowMinutes: number;
   engagementMinComments: number;
+  discordWebhookUrl: string;
 };
 
 /**
@@ -50,7 +51,13 @@ function unwrapSelect(raw: unknown): unknown {
 
 function coerceMode(raw: unknown, fallback: Mode): Mode {
   const v = unwrapSelect(raw);
-  if (v === 'off' || v === 'shadow' || v === 'on') {
+  if (
+    v === 'off' ||
+    v === 'shadow' ||
+    v === 'shadow+' ||
+    v === 'on' ||
+    v === 'on+'
+  ) {
     return v;
   }
   return fallback;
@@ -58,7 +65,7 @@ function coerceMode(raw: unknown, fallback: Mode): Mode {
 
 function coerceBinaryMode(raw: unknown, fallback: BinaryMode): BinaryMode {
   const v = unwrapSelect(raw);
-  if (v === 'off' || v === 'on') {
+  if (v === 'off' || v === 'on' || v === 'on+') {
     return v;
   }
   return fallback;
@@ -68,6 +75,11 @@ function coerceNumber(raw: unknown, fallback: number): number {
   if (typeof raw === 'number' && Number.isFinite(raw)) {
     return raw;
   }
+  return fallback;
+}
+
+function coerceString(raw: unknown, fallback: string): string {
+  if (typeof raw === 'string') return raw;
   return fallback;
 }
 
@@ -91,6 +103,10 @@ function resolveFromRaw(raw: Record<string, unknown>): ResolvedSettings {
     engagementMinComments: coerceNumber(
       raw.engagementMinComments,
       SETTING_DEFAULTS.engagementMinComments
+    ),
+    discordWebhookUrl: coerceString(
+      raw.discordWebhookUrl,
+      SETTING_DEFAULTS.discordWebhookUrl
     ),
   };
 }

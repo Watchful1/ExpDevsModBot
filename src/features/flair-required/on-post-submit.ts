@@ -1,5 +1,5 @@
 import type { T3 } from '@devvit/shared-types/tid.js';
-import { REMOVAL_REASONS } from '../../config';
+import { REMOVAL_REASONS, isShadowMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import { postRemovalSticky, removePostByUs } from '../../core/reddit-helpers';
 import type { ResolvedSettings } from '../../core/settings';
@@ -39,10 +39,10 @@ export async function apply(
     return { removed: false };
   }
 
-  if (settings.flairMode === 'shadow') {
+  if (isShadowMode(settings.flairMode)) {
     logFeatureAction({
       feature: 'flair-required',
-      mode: 'shadow',
+      mode: settings.flairMode,
       action: 'remove-post',
       postId: input.postId,
       authorName: input.authorName,
@@ -55,7 +55,7 @@ export async function apply(
   await postRemovalSticky(input.postId as T3, REMOVAL_REASONS.flairMissing);
   logFeatureAction({
     feature: 'flair-required',
-    mode: 'on',
+    mode: settings.flairMode,
     action: 'remove-post',
     postId: input.postId,
     authorName: input.authorName,

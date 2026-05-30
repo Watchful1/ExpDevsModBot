@@ -42,6 +42,10 @@
           {
             "label": "On",
             "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
           }
         ],
         "defaultValue": "off"
@@ -60,8 +64,16 @@
             "value": "shadow"
           },
           {
+            "label": "Shadow + Discord (log + mirror to webhook)",
+            "value": "shadow+"
+          },
+          {
             "label": "On",
             "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
           }
         ],
         "defaultValue": "off"
@@ -80,8 +92,16 @@
             "value": "shadow"
           },
           {
+            "label": "Shadow + Discord (log + mirror to webhook)",
+            "value": "shadow+"
+          },
+          {
             "label": "On",
             "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
           }
         ],
         "defaultValue": "off"
@@ -100,8 +120,16 @@
             "value": "shadow"
           },
           {
+            "label": "Shadow + Discord (log + mirror to webhook)",
+            "value": "shadow+"
+          },
+          {
             "label": "On",
             "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
           }
         ],
         "defaultValue": "off"
@@ -123,11 +151,21 @@
         "label": "Engagement comment threshold",
         "helpText": "Minimum total comments before the engagement check will remove a post. Default 10.",
         "defaultValue": 10
+      },
+      "discordWebhookUrl": {
+        "type": "string",
+        "label": "Discord webhook URL",
+        "helpText": "Optional. When a feature is set to 'Shadow + Discord', its log lines are POSTed here in addition to the regular log stream. Leave blank to disable.",
+        "defaultValue": ""
       }
     }
   },
   "permissions": {
-    "reddit": true
+    "reddit": true,
+    "http": {
+      "enable": true,
+      "domains": ["discord.com"]
+    }
   },
   "dev": {
     "subreddit": "expdevsmodbot_dev"

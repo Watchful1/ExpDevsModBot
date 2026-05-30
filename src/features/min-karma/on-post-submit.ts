@@ -1,5 +1,5 @@
 import { reddit } from '@devvit/web/server';
-import { REMOVAL_REASONS } from '../../config';
+import { REMOVAL_REASONS, isShadowMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import { postRemovalSticky, removePostByUs } from '../../core/reddit-helpers';
 import type { ResolvedSettings } from '../../core/settings';
@@ -68,10 +68,10 @@ export async function apply(
     return { removed: false };
   }
 
-  if (settings.minKarmaMode === 'shadow') {
+  if (isShadowMode(settings.minKarmaMode)) {
     logFeatureAction({
       feature: 'min-karma',
-      mode: 'shadow',
+      mode: settings.minKarmaMode,
       action: 'remove-post',
       postId: input.postId,
       authorName: input.authorName,
@@ -81,7 +81,7 @@ export async function apply(
     return { removed: false };
   }
 
-  // mode === 'on'
+  // live: mode === 'on' or 'on+'
   await removePostByUs(input.postId);
   await postRemovalSticky(
     input.postId,
@@ -89,7 +89,7 @@ export async function apply(
   );
   logFeatureAction({
     feature: 'min-karma',
-    mode: 'on',
+    mode: settings.minKarmaMode,
     action: 'remove-post',
     postId: input.postId,
     authorName: input.authorName,

@@ -52,5 +52,6 @@ export async function run(
     reason: `scheduled engagement check in ${settings.engagementWindowMinutes}m`,
     extra: { jobId, runAt: runAt.toISOString() },
   });
+  // schedule-check is filtered out of Discord by formatDiscordSentence().
   return { removed: false };
 }

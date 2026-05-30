@@ -1,5 +1,6 @@
 import { reddit } from '@devvit/web/server';
 import type { T3 } from '@devvit/shared-types/tid.js';
+import { isLiveMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import {
   approvePostById,
@@ -56,7 +57,7 @@ export async function run(
     return { removed: false };
   }
 
-  const flairOn = settings.flairMode === 'on';
+  const flairOn = isLiveMode(settings.flairMode);
   const nextState = nextStateAfterAiSatisfied({ flairOn });
 
   // If a human mod removed the post in the meantime, transition the sticky
@@ -65,7 +66,7 @@ export async function run(
     await transitionSticky(input.postId as T3, nextState);
     logFeatureAction({
       feature: 'ai-gate',
-      mode: 'on',
+      mode: settings.aiGateMode,
       action: 'transition-sticky',
       postId: input.postId,
       authorName: input.authorName,
@@ -79,7 +80,7 @@ export async function run(
   await transitionSticky(input.postId as T3, nextState);
   logFeatureAction({
     feature: 'ai-gate',
-    mode: 'on',
+    mode: settings.aiGateMode,
     action: 'reapprove-post',
     postId: input.postId,
     authorName: input.authorName,

@@ -1,4 +1,11 @@
-import type { FeatureName, Mode, BinaryMode } from '../config';
+import {
+  isShadowMode,
+  shouldMirrorToDiscord,
+  type BinaryMode,
+  type FeatureName,
+  type Mode,
+} from '../config';
+import { formatDiscordSentence, notifyDiscord } from './discord';
 
 /**
  * Structured log helper. Every line follows the pattern
@@ -6,8 +13,9 @@ import type { FeatureName, Mode, BinaryMode } from '../config';
  *   [modbot] [<mode>] feature=<name> action=<verb> postId=<id> author=<u> reason="<why>"
  *
  * so it's easy to grep through `devvit logs <subreddit>` output. The
- * `shadow`-mode lines exist specifically so we can validate behavior before
- * flipping a feature live.
+ * `shadow` / `shadow+` mode lines exist specifically so we can validate
+ * behavior before flipping a feature live. When the feature's mode is
+ * `shadow+`, the same line is also fired to the configured Discord webhook.
  */
 export function logFeatureAction(args: {
   feature: FeatureName;
@@ -28,7 +36,7 @@ export function logFeatureAction(args: {
   reason: string;
   extra?: Record<string, unknown>;
 }): void {
-  const tag = args.mode === 'shadow' ? '[shadow]' : '[live]';
+  const tag = isShadowMode(args.mode) ? '[shadow]' : '[live]';
   const parts = [
     '[modbot]',
     tag,
@@ -45,5 +53,18 @@ export function logFeatureAction(args: {
       parts.push(`${k}=${JSON.stringify(v)}`);
     }
   }
-  console.log(parts.join(' '));
+  const line = parts.join(' ');
+  console.log(line);
+  if (shouldMirrorToDiscord(args.mode)) {
+    const sentence = formatDiscordSentence({
+      feature: args.feature,
+      action: args.action,
+      mode: args.mode,
+      ...(args.postId !== undefined && { postId: args.postId }),
+      ...(args.commentId !== undefined && { commentId: args.commentId }),
+      ...(args.authorName !== undefined && { authorName: args.authorName }),
+      reason: args.reason,
+    });
+    if (sentence) notifyDiscord(sentence);
+  }
 }

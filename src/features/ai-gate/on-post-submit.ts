@@ -1,3 +1,4 @@
+import { isLiveMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import { removePostByUs } from '../../core/reddit-helpers';
 import type { ResolvedSettings } from '../../core/settings';
@@ -34,8 +35,8 @@ export async function run(
     return { removed: false };
   }
 
-  const aiGateOn = settings.aiGateMode === 'on';
-  const flairOn = settings.flairMode === 'on';
+  const aiGateOn = isLiveMode(settings.aiGateMode);
+  const flairOn = isLiveMode(settings.flairMode);
   const desired = initialStickyStateForPost({ aiGateOn, flairOn });
   if (!desired) {
     return { removed: false };
@@ -46,7 +47,7 @@ export async function run(
     await ensureSticky(input.postId, 'awaiting-ai');
     logFeatureAction({
       feature: 'ai-gate',
-      mode: 'on',
+      mode: settings.aiGateMode,
       action: 'remove-post',
       postId: input.postId,
       authorName: input.authorName,
@@ -54,7 +55,7 @@ export async function run(
     });
     logFeatureAction({
       feature: 'ai-gate',
-      mode: 'on',
+      mode: settings.aiGateMode,
       action: 'sticky',
       postId: input.postId,
       reason: 'created awaiting-ai sticky',
@@ -66,7 +67,7 @@ export async function run(
   await ensureSticky(input.postId, 'flair-psa');
   logFeatureAction({
     feature: 'ai-gate',
-    mode: 'on',
+    mode: settings.flairMode,
     action: 'sticky',
     postId: input.postId,
     reason: 'created flair-psa sticky (AI gate off)',

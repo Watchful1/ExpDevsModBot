@@ -1,6 +1,6 @@
 import { reddit } from '@devvit/web/server';
 import type { T3 } from '@devvit/shared-types/tid.js';
-import { ENGAGEMENT_REMOVAL_BODY } from '../../config';
+import { ENGAGEMENT_REMOVAL_BODY, isShadowMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import {
   postRemovalSticky,
@@ -147,10 +147,10 @@ export async function runScheduledCheck(data: ScheduledData): Promise<void> {
   }
 
   // All checks failed — OP is silent. Act.
-  if (settings.engagementMode === 'shadow') {
+  if (isShadowMode(settings.engagementMode)) {
     logFeatureAction({
       feature: 'op-engagement',
-      mode: 'shadow',
+      mode: settings.engagementMode,
       action: 'engagement-remove',
       postId,
       authorName: data.authorName,
@@ -161,7 +161,7 @@ export async function runScheduledCheck(data: ScheduledData): Promise<void> {
     return;
   }
 
-  // engagementMode === 'on' — remove + Track B sticky
+  // live: engagementMode === 'on' or 'on+' — remove + Track B sticky
   await removePostByUs(postId);
   const commentId = await postRemovalSticky(
     postId,
@@ -172,7 +172,7 @@ export async function runScheduledCheck(data: ScheduledData): Promise<void> {
   }
   logFeatureAction({
     feature: 'op-engagement',
-    mode: 'on',
+    mode: settings.engagementMode,
     action: 'engagement-remove',
     postId,
     authorName: data.authorName,

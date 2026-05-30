@@ -11,7 +11,17 @@ A Devvit moderation bot for [r/ExperiencedDevs](https://reddit.com/r/Experienced
 | **OP engagement check** | scheduled job, `CommentSubmit` | If a post has ≥N comments at the engagement window mark but OP hasn't commented, removes it and stickies a notice. OP commenting later re-approves and restores the original sticky. |
 | **Minimum subreddit karma** | `PostSubmit` | Removes posts by users whose combined post + comment karma in this sub is below a threshold. |
 
-Mods (including the app account itself) are exempt from every check. Each feature except the AI gate also supports a **shadow** mode that logs what it *would* have done without taking the Reddit-visible action — useful for validating behavior before flipping a feature live.
+Mods (including the app account itself) are exempt from every check. Each feature has a mode setting that controls behavior, with a `+` suffix flag that also mirrors the action to a configured Discord webhook:
+
+| Mode | Reddit action | Discord mirror |
+|---|---|---|
+| `off` | none | no |
+| `shadow` | none (log only) | no |
+| `shadow+` | none (log only) | yes |
+| `on` | live | no |
+| `on+` | live | yes |
+
+The AI gate has no `shadow` modes (its action is structural) but does support `off` / `on` / `on+`.
 
 ### Multipurpose sticky
 
@@ -65,13 +75,14 @@ Configured per install at `https://developers.reddit.com/r/<subreddit>/apps/expd
 
 | Key | Type | Default | Description |
 |---|---|---|---|
-| `aiGateMode` | off / on | off | AI disclosure gate. No shadow mode (binary effect). |
-| `flairMode` | off / shadow / on | off | Flair requirement for posts + comments. |
-| `engagementMode` | off / shadow / on | off | 2-hour-ish OP-engagement check. |
-| `minKarmaMode` | off / shadow / on | off | Subreddit-karma gate on posts. |
+| `aiGateMode` | off / on / on+ | off | AI disclosure gate. No shadow modes (binary effect). |
+| `flairMode` | off / shadow / shadow+ / on / on+ | off | Flair requirement for posts + comments. |
+| `engagementMode` | off / shadow / shadow+ / on / on+ | off | 2-hour-ish OP-engagement check. |
+| `minKarmaMode` | off / shadow / shadow+ / on / on+ | off | Subreddit-karma gate on posts. |
 | `minKarmaThreshold` | number | 10 | Combined post + comment karma required. |
 | `engagementWindowMinutes` | number | 120 | Window before the engagement check fires. |
 | `engagementMinComments` | number | 10 | Minimum total comments before engagement check will remove. |
+| `discordWebhookUrl` | string | "" | Optional Discord webhook URL. Required for the `+` suffix modes to actually deliver mirrored notifications. |
 
 ## Setup
 
@@ -133,13 +144,25 @@ A mod-only post menu item, "Modbot: dump post state," dumps the bot's Redis keys
 
 The full JSON is also written to `devvit logs` as `[modbot] [debug-state] {...}`.
 
+### Discord mirroring
+
+Create a Discord webhook (channel settings → Integrations → Webhooks → New Webhook → Copy URL), paste it into the `discordWebhookUrl` setting, then switch features to a `+` suffix mode:
+
+- `shadow+` — log + Discord, no Reddit action. Use during validation to watch decisions without enforcing.
+- `on+` — live + Discord. Use in production when you want ongoing visibility of every action.
+
+Each Discord message is a single concise sentence with an inline link to the affected post. The `<url>` syntax suppresses link-preview cards so the channel stays a flat readable list:
+
+> Removed [post](https://reddit.com/comments/abc123) by u/Alice — karma 3 < threshold 10
+
+Production behavior is never blocked by Discord failures — the call is fire-and-forget with errors swallowed and logged.
+
 ### Roll-out
 
 1. Deploy with all features `off` (current defaults).
-2. Flip one feature to `shadow` per week.
-3. Watch logs for false positives.
-4. Flip to `on`.
-5. Repeat for the next feature.
+2. Set `discordWebhookUrl` and flip a feature to `shadow+` so you can watch decisions in your moderator Discord channel.
+3. After a few days of clean signals, flip the feature to `on+` (or `on` if you'd rather not get ongoing notifications).
+4. Repeat for the next feature.
 
 See `docs/playtest-checklist.md` for the manual verification matrix used during initial validation.
 

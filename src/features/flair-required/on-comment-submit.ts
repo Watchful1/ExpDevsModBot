@@ -1,4 +1,5 @@
 import { reddit } from '@devvit/web/server';
+import { isShadowMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import type { ResolvedSettings } from '../../core/settings';
 import type { CommentSubmitInput, FeatureResult } from '../types';
@@ -34,10 +35,10 @@ export async function apply(
     return { removed: false };
   }
 
-  if (settings.flairMode === 'shadow') {
+  if (isShadowMode(settings.flairMode)) {
     logFeatureAction({
       feature: 'flair-required',
-      mode: 'shadow',
+      mode: settings.flairMode,
       action: 'remove-comment',
       postId: input.postId,
       commentId: input.commentId,
@@ -60,7 +61,7 @@ export async function apply(
   }
   logFeatureAction({
     feature: 'flair-required',
-    mode: 'on',
+    mode: settings.flairMode,
     action: 'remove-comment',
     postId: input.postId,
     commentId: input.commentId,

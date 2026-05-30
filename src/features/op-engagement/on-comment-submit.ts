@@ -1,5 +1,6 @@
 import { reddit } from '@devvit/web/server';
 import type { T3 } from '@devvit/shared-types/tid.js';
+import { isLiveMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
 import { approvePostById } from '../../core/reddit-helpers';
 import type { ResolvedSettings } from '../../core/settings';
@@ -24,7 +25,7 @@ export async function run(
   input: CommentSubmitInput,
   settings: ResolvedSettings
 ): Promise<FeatureResult> {
-  if (settings.engagementMode !== 'on') return { removed: false };
+  if (!isLiveMode(settings.engagementMode)) return { removed: false };
 
   const engagementSticky = await getEngagementSticky(input.postId);
   if (!engagementSticky) return { removed: false };
@@ -74,7 +75,7 @@ export async function run(
 
   logFeatureAction({
     feature: 'op-engagement',
-    mode: 'on',
+    mode: settings.engagementMode,
     action: 'reapprove-post',
     postId: input.postId,
     authorName: input.authorName,

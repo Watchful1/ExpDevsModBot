@@ -4,8 +4,37 @@
  * carry magic strings.
  */
 
-export type Mode = 'off' | 'shadow' | 'on';
-export type BinaryMode = 'off' | 'on';
+/**
+ * Mode for the three shadow-capable features. The `+` suffix is an
+ * orthogonal flag that means "also mirror the log line to the configured
+ * Discord webhook" — useful for richer visibility during validation or
+ * ongoing operation than scraping `devvit logs`.
+ *
+ *   off      — feature does nothing
+ *   shadow   — log only (no Reddit-visible action)
+ *   shadow+  — log + Discord (no Reddit-visible action)
+ *   on       — live action
+ *   on+      — live action + Discord
+ */
+export type Mode = 'off' | 'shadow' | 'shadow+' | 'on' | 'on+';
+
+/** AI gate doesn't have a meaningful shadow mode (its action is structural). */
+export type BinaryMode = 'off' | 'on' | 'on+';
+
+/** True iff the mode counts as a non-acting log-only state. */
+export function isShadowMode(mode: Mode | BinaryMode): boolean {
+  return mode === 'shadow' || mode === 'shadow+';
+}
+
+/** True iff the mode actually performs Reddit-visible actions. */
+export function isLiveMode(mode: Mode | BinaryMode): boolean {
+  return mode === 'on' || mode === 'on+';
+}
+
+/** True iff the mode should mirror its log line to Discord. */
+export function shouldMirrorToDiscord(mode: Mode | BinaryMode): boolean {
+  return mode === 'shadow+' || mode === 'on+';
+}
 
 /** Feature names used in structured log lines. */
 export type FeatureName =
@@ -22,6 +51,7 @@ export const SETTING_DEFAULTS = {
   minKarmaThreshold: 10,
   engagementWindowMinutes: 120,
   engagementMinComments: 10,
+  discordWebhookUrl: '',
 } as const;
 
 /** State of the Track A multipurpose sticky. */
