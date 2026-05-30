@@ -1,0 +1,135 @@
+{
+  "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
+  "name": "expdevsmodbot",
+  "server": {
+    "dir": "dist/server",
+    "entry": "index.cjs"
+  },
+  "triggers": {
+    "onAppInstall": "/internal/triggers/on-app-install",
+    "onPostSubmit": "/internal/triggers/on-post-submit",
+    "onCommentSubmit": "/internal/triggers/on-comment-submit"
+  },
+  "scheduler": {
+    "tasks": {
+      "op-engagement-check": {
+        "endpoint": "/internal/scheduler/op-engagement-check"
+      }
+    }
+  },
+  "menu": {
+    "items": [
+      {
+        "label": "Modbot: dump post state",
+        "description": "Show the modbot's Redis state for this post in a toast.",
+        "location": "post",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/debug-state"
+      }
+    ]
+  },
+  "settings": {
+    "subreddit": {
+      "aiGateMode": {
+        "type": "select",
+        "label": "AI disclosure gate",
+        "helpText": "Requires OP to reply to a sticky comment confirming AI tool usage. Posts are removed until OP replies.",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          }
+        ],
+        "defaultValue": "off"
+      },
+      "flairMode": {
+        "type": "select",
+        "label": "Flair required",
+        "helpText": "Removes posts and comments by users without a user flair. Shadow logs intended removals without acting.",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
+          },
+          {
+            "label": "Shadow (log only)",
+            "value": "shadow"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          }
+        ],
+        "defaultValue": "off"
+      },
+      "engagementMode": {
+        "type": "select",
+        "label": "OP engagement check",
+        "helpText": "Removes posts where OP hasn't commented within the configured window, only if the comment threshold is met.",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
+          },
+          {
+            "label": "Shadow (log only)",
+            "value": "shadow"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          }
+        ],
+        "defaultValue": "off"
+      },
+      "minKarmaMode": {
+        "type": "select",
+        "label": "Minimum subreddit karma",
+        "helpText": "Removes posts by users whose combined post + comment karma in this sub is below the threshold.",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
+          },
+          {
+            "label": "Shadow (log only)",
+            "value": "shadow"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          }
+        ],
+        "defaultValue": "off"
+      },
+      "minKarmaThreshold": {
+        "type": "number",
+        "label": "Karma threshold (post + comment)",
+        "helpText": "Combined post + comment karma in this subreddit required to post. Default 10.",
+        "defaultValue": 10
+      },
+      "engagementWindowMinutes": {
+        "type": "number",
+        "label": "Engagement window (minutes)",
+        "helpText": "How long after posting the bot waits before checking OP engagement. Default 120 (2 hours).",
+        "defaultValue": 120
+      },
+      "engagementMinComments": {
+        "type": "number",
+        "label": "Engagement comment threshold",
+        "helpText": "Minimum total comments before the engagement check will remove a post. Default 10.",
+        "defaultValue": 10
+      }
+    }
+  },
+  "permissions": {
+    "reddit": true
+  },
+  "dev": {
+    "subreddit": "expdevsmodbot_dev"
+  }
+}
