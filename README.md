@@ -76,7 +76,7 @@ Configured per install at `https://developers.reddit.com/r/<subreddit>/apps/expd
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `aiGateMode` | off / on / on+ | off | AI disclosure gate. No shadow modes (binary effect). |
-| `flairMode` | off / shadow / shadow+ / on / on+ | off | Flair requirement for posts + comments. |
+| `flairMode` | off / shadow / shadow+posts / shadow+ / on / on+posts / on+ | off | Flair requirement for posts + comments. The `+posts` variants mirror only post removals to Discord; the plain `+` variants mirror posts and comments. |
 | `engagementMode` | off / shadow / shadow+ / on / on+ | off | 2-hour-ish OP-engagement check. |
 | `minKarmaMode` | off / shadow / shadow+ / on / on+ | off | Subreddit-karma gate on posts. |
 | `minKarmaThreshold` | number | 10 | Combined post + comment karma required. |

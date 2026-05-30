@@ -101,6 +101,13 @@ describe('settings.resolveFromRaw', () => {
     expect(r.minKarmaMode).toBe('on+');
   });
 
+  it('accepts +posts variants for flair-required', () => {
+    const r1 = _resolveForTests({ flairMode: 'shadow+posts' });
+    const r2 = _resolveForTests({ flairMode: ['on+posts'] });
+    expect(r1.flairMode).toBe('shadow+posts');
+    expect(r2.flairMode).toBe('on+posts');
+  });
+
   it('rejects shadow+ for the binary aiGateMode', () => {
     const r = _resolveForTests({ aiGateMode: 'shadow+' });
     expect(r.aiGateMode).toBe(SETTING_DEFAULTS.aiGateMode);

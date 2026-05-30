@@ -53,7 +53,7 @@
       "flairMode": {
         "type": "select",
         "label": "Flair required",
-        "helpText": "Removes posts and comments by users without a user flair. Shadow logs intended removals without acting.",
+        "helpText": "Removes posts and comments by users without a user flair. Shadow logs intended removals without acting. The 'posts only' variants mirror only post removals to Discord; the others mirror both posts and comments.",
         "options": [
           {
             "label": "Off",
@@ -64,7 +64,11 @@
             "value": "shadow"
           },
           {
-            "label": "Shadow + Discord (log + mirror to webhook)",
+            "label": "Shadow + Discord (posts only)",
+            "value": "shadow+posts"
+          },
+          {
+            "label": "Shadow + Discord (posts and comments)",
             "value": "shadow+"
           },
           {
@@ -72,7 +76,11 @@
             "value": "on"
           },
           {
-            "label": "On + Discord (live + mirror to webhook)",
+            "label": "On + Discord (posts only)",
+            "value": "on+posts"
+          },
+          {
+            "label": "On + Discord (posts and comments)",
             "value": "on+"
           }
         ],

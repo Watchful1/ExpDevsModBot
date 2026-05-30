@@ -55,8 +55,10 @@ function coerceMode(raw: unknown, fallback: Mode): Mode {
     v === 'off' ||
     v === 'shadow' ||
     v === 'shadow+' ||
+    v === 'shadow+posts' ||
     v === 'on' ||
-    v === 'on+'
+    v === 'on+' ||
+    v === 'on+posts'
   ) {
     return v;
   }
