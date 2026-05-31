@@ -89,28 +89,34 @@ export const SCHEDULED_JOB_NAMES = {
  */
 export const STICKY_BODIES: Record<StickyState, string> = {
   'awaiting-ai':
-    '**AI disclosure required.**\n\n' +
-    "r/ExperiencedDevs requires authors to disclose AI-tool usage. Please reply to **this comment** describing whether and how you used AI tools (e.g. ChatGPT, Copilot, Cursor) for the content of this post. Any reply will do — just confirm.\n\n" +
-    'Your post is currently removed and will be re-approved once you reply here.',
+    'AI disclosure required.\n\n' +
+    "r/ExperiencedDevs requires authors to disclose AI-tool usage. Please reply to this comment describing whether and how you used AI tools, including spelling and translation ones, for the content of this post. If you did not use any AI tools, just say you didn't.\n\n" +
+    'Your post is currently removed and will be automatically re-approved once you reply here.',
   'flair-psa':
-    '**Reminder:** comments here require a user flair to remain visible. ' +
-    "If your comment is removed, set a flair via the subreddit sidebar (or `…` menu on mobile) and try again.",
+    'IMPORTANT: r/ExperiencedDevs requires all commenters to have a flair. ' +
+    'If you do not have a flair with your role, your comment will be automatically, silently removed. ' +
+    'Set a flair in the subreddit sidebar or ... menu on mobile.',
   confirmed:
-    '**AI disclosure provided by OP. Thanks!** Your post is visible to the sub.',
+    'AI usage disclosure provided by OP, see the reply to this comment.',
 };
 
 export const ENGAGEMENT_REMOVAL_BODY = (windowMinutes: number) =>
-  '**Post removed: OP did not engage.**\n\n' +
-  `r/ExperiencedDevs requires the original poster to participate in the discussion. ` +
-  `This post had comments waiting but no reply from OP within ${windowMinutes} minutes of posting, so it has been removed.\n\n` +
-  'If you comment on your post now, it will be re-approved automatically.';
+  'Post automatically removed.\n\n' +
+  'r/ExperiencedDevs requires the original poster to participate in the discussion, ' +
+  `but they made no comments within ${windowMinutes} minutes. ` +
+  'If you comment anywhere on the post, it will be automatically re-approved.';
 
 /** Removal reasons attached to mod actions / removal notes. */
 export const REMOVAL_REASONS = {
-  minKarma: (threshold: number) =>
-    `Your account does not meet the minimum subreddit karma threshold (${threshold}) for r/ExperiencedDevs. Participate in comments first, then try posting again.`,
+  minKarma:
+    'Post automatically removed.\n\n' +
+    'r/ExperiencedDevs requires all posters to participate by commenting in the sub before they are eligible to post. ' +
+    'Comment on another post some and try again.',
   flairMissing:
-    'r/ExperiencedDevs requires a user flair to post or comment. Please set one via the subreddit sidebar.',
+    'Post automatically removed.\n\n' +
+    'r/ExperiencedDevs requires all posters to have a flair with your role. ' +
+    'Since you do not have one, your post was removed. ' +
+    'Set a flair in the subreddit sidebar or ... menu on mobile, and then post again.',
 } as const;
 
 /**

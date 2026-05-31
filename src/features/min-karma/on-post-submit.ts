@@ -83,10 +83,7 @@ export async function apply(
 
   // live: mode === 'on' or 'on+'
   await removePostByUs(input.postId);
-  await postRemovalSticky(
-    input.postId,
-    REMOVAL_REASONS.minKarma(decision.threshold)
-  );
+  await postRemovalSticky(input.postId, REMOVAL_REASONS.minKarma);
   logFeatureAction({
     feature: 'min-karma',
     mode: settings.minKarmaMode,
