@@ -13,7 +13,8 @@ import {
  */
 export type ResolvedSettings = {
   aiGateMode: BinaryMode;
-  flairMode: Mode;
+  flairPostMode: Mode;
+  flairCommentMode: Mode;
   engagementMode: Mode;
   minKarmaMode: Mode;
   minKarmaThreshold: number;
@@ -55,10 +56,8 @@ function coerceMode(raw: unknown, fallback: Mode): Mode {
     v === 'off' ||
     v === 'shadow' ||
     v === 'shadow+' ||
-    v === 'shadow+posts' ||
     v === 'on' ||
-    v === 'on+' ||
-    v === 'on+posts'
+    v === 'on+'
   ) {
     return v;
   }
@@ -88,7 +87,14 @@ function coerceString(raw: unknown, fallback: string): string {
 function resolveFromRaw(raw: Record<string, unknown>): ResolvedSettings {
   return {
     aiGateMode: coerceBinaryMode(raw.aiGateMode, SETTING_DEFAULTS.aiGateMode),
-    flairMode: coerceMode(raw.flairMode, SETTING_DEFAULTS.flairMode),
+    flairPostMode: coerceMode(
+      raw.flairPostMode,
+      SETTING_DEFAULTS.flairPostMode
+    ),
+    flairCommentMode: coerceMode(
+      raw.flairCommentMode,
+      SETTING_DEFAULTS.flairCommentMode
+    ),
     engagementMode: coerceMode(
       raw.engagementMode,
       SETTING_DEFAULTS.engagementMode

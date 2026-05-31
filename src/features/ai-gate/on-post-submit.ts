@@ -36,7 +36,8 @@ export async function run(
   }
 
   const aiGateOn = isLiveMode(settings.aiGateMode);
-  const flairOn = isLiveMode(settings.flairMode);
+  // The flair PSA targets *commenters*, so key off the comment-flair setting.
+  const flairOn = isLiveMode(settings.flairCommentMode);
   const desired = initialStickyStateForPost({ aiGateOn, flairOn });
   if (!desired) {
     return { removed: false };
@@ -67,7 +68,7 @@ export async function run(
   await ensureSticky(input.postId, 'flair-psa');
   logFeatureAction({
     feature: 'ai-gate',
-    mode: settings.flairMode,
+    mode: settings.flairCommentMode,
     action: 'sticky',
     postId: input.postId,
     reason: 'created flair-psa sticky (AI gate off)',

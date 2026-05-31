@@ -57,7 +57,9 @@ export async function run(
     return { removed: false };
   }
 
-  const flairOn = isLiveMode(settings.flairMode);
+  // The PSA targets commenters, so the sticky's post-AI transition keys off
+  // whether comments require flair.
+  const flairOn = isLiveMode(settings.flairCommentMode);
   const nextState = nextStateAfterAiSatisfied({ flairOn });
 
   // If a human mod removed the post in the meantime, transition the sticky

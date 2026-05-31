@@ -55,7 +55,7 @@ export function logFeatureAction(args: {
   }
   const line = parts.join(' ');
   console.log(line);
-  if (shouldMirrorToDiscord(args.mode, args.action)) {
+  if (shouldMirrorToDiscord(args.mode)) {
     const sentence = formatDiscordSentence({
       feature: args.feature,
       action: args.action,

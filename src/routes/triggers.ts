@@ -109,7 +109,7 @@ triggers.post('/on-post-submit', async (c) => {
   const settings = await getSettings();
   console.log(
     `[modbot] on-post-submit settings postId=${postId} ` +
-      `aiGate=${settings.aiGateMode} flair=${settings.flairMode} ` +
+      `aiGate=${settings.aiGateMode} flairPost=${settings.flairPostMode} flairComment=${settings.flairCommentMode} ` +
       `engagement=${settings.engagementMode} minKarma=${settings.minKarmaMode} ` +
       `karmaThreshold=${settings.minKarmaThreshold} ` +
       `engagementWindow=${settings.engagementWindowMinutes}m ` +
@@ -213,7 +213,7 @@ triggers.post('/on-comment-submit', async (c) => {
     if (isOpReplyToTrackA) {
       logFeatureAction({
         feature: 'flair-required',
-        mode: settings.flairMode,
+        mode: settings.flairCommentMode,
         action: 'skip',
         postId,
         commentId: input.commentId,

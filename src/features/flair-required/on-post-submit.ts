@@ -18,7 +18,7 @@ export function decide(
   settings: ResolvedSettings,
   ctx: DispatchContext
 ): Decision {
-  if (settings.flairMode === 'off') {
+  if (settings.flairPostMode === 'off') {
     return { kind: 'noop', reason: 'feature off' };
   }
   if (ctx.alreadyRemoved) {
@@ -39,10 +39,10 @@ export async function apply(
     return { removed: false };
   }
 
-  if (isShadowMode(settings.flairMode)) {
+  if (isShadowMode(settings.flairPostMode)) {
     logFeatureAction({
       feature: 'flair-required',
-      mode: settings.flairMode,
+      mode: settings.flairPostMode,
       action: 'remove-post',
       postId: input.postId,
       authorName: input.authorName,
@@ -55,7 +55,7 @@ export async function apply(
   await postRemovalSticky(input.postId as T3, REMOVAL_REASONS.flairMissing);
   logFeatureAction({
     feature: 'flair-required',
-    mode: settings.flairMode,
+    mode: settings.flairPostMode,
     action: 'remove-post',
     postId: input.postId,
     authorName: input.authorName,

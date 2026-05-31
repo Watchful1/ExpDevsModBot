@@ -17,7 +17,7 @@ export function decide(
   input: CommentSubmitInput,
   settings: ResolvedSettings
 ): Decision {
-  if (settings.flairMode === 'off') {
+  if (settings.flairCommentMode === 'off') {
     return { kind: 'noop', reason: 'feature off' };
   }
   if (input.authorHasFlair) {
@@ -35,10 +35,10 @@ export async function apply(
     return { removed: false };
   }
 
-  if (isShadowMode(settings.flairMode)) {
+  if (isShadowMode(settings.flairCommentMode)) {
     logFeatureAction({
       feature: 'flair-required',
-      mode: settings.flairMode,
+      mode: settings.flairCommentMode,
       action: 'remove-comment',
       postId: input.postId,
       commentId: input.commentId,
@@ -61,7 +61,7 @@ export async function apply(
   }
   logFeatureAction({
     feature: 'flair-required',
-    mode: settings.flairMode,
+    mode: settings.flairCommentMode,
     action: 'remove-comment',
     postId: input.postId,
     commentId: input.commentId,

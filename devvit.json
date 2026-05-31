@@ -50,10 +50,10 @@
         ],
         "defaultValue": "off"
       },
-      "flairMode": {
+      "flairPostMode": {
         "type": "select",
-        "label": "Flair required",
-        "helpText": "Removes posts and comments by users without a user flair. Shadow logs intended removals without acting. The 'posts only' variants mirror only post removals to Discord; the others mirror both posts and comments.",
+        "label": "Flair required on posts",
+        "helpText": "Removes posts by users without a user flair on the subreddit.",
         "options": [
           {
             "label": "Off",
@@ -64,11 +64,7 @@
             "value": "shadow"
           },
           {
-            "label": "Shadow + Discord (posts only)",
-            "value": "shadow+posts"
-          },
-          {
-            "label": "Shadow + Discord (posts and comments)",
+            "label": "Shadow + Discord (log + mirror to webhook)",
             "value": "shadow+"
           },
           {
@@ -76,11 +72,35 @@
             "value": "on"
           },
           {
-            "label": "On + Discord (posts only)",
-            "value": "on+posts"
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
+          }
+        ],
+        "defaultValue": "off"
+      },
+      "flairCommentMode": {
+        "type": "select",
+        "label": "Flair required on comments",
+        "helpText": "Removes comments by users without a user flair on the subreddit. The 'flair required' PSA on the bot's sticky comment is shown only when this is On or On + Discord.",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
           },
           {
-            "label": "On + Discord (posts and comments)",
+            "label": "Shadow (log only)",
+            "value": "shadow"
+          },
+          {
+            "label": "Shadow + Discord (log + mirror to webhook)",
+            "value": "shadow+"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
             "value": "on+"
           }
         ],

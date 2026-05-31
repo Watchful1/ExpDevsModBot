@@ -5,73 +5,35 @@
  */
 
 /**
- * Mode for the three shadow-capable features. The `+` suffix is an
- * orthogonal flag that means "also mirror the log line to the configured
- * Discord webhook" — useful for richer visibility during validation or
- * ongoing operation than scraping `devvit logs`.
+ * Mode for the shadow-capable features. The `+` suffix is an orthogonal flag
+ * that means "also mirror the log line to the configured Discord webhook" —
+ * useful for richer visibility during validation or ongoing operation than
+ * scraping `devvit logs`.
  *
- *   off          — feature does nothing
- *   shadow       — log only (no Reddit-visible action)
- *   shadow+      — log + Discord, all action types (no Reddit-visible action)
- *   shadow+posts — log + Discord on post actions only (flair-required only)
- *   on           — live action
- *   on+          — live action + Discord, all action types
- *   on+posts     — live action + Discord on post actions only (flair-required only)
- *
- * `shadow+posts` and `on+posts` only meaningfully differ from `shadow+` /
- * `on+` for `flair-required`, which is the only feature with comment-level
- * actions. Other features have no comment actions so the variants behave
- * identically there.
+ *   off     — feature does nothing
+ *   shadow  — log only (no Reddit-visible action)
+ *   shadow+ — log + Discord (no Reddit-visible action)
+ *   on      — live action
+ *   on+     — live action + Discord
  */
-export type Mode =
-  | 'off'
-  | 'shadow'
-  | 'shadow+'
-  | 'shadow+posts'
-  | 'on'
-  | 'on+'
-  | 'on+posts';
+export type Mode = 'off' | 'shadow' | 'shadow+' | 'on' | 'on+';
 
 /** AI gate doesn't have a meaningful shadow mode (its action is structural). */
 export type BinaryMode = 'off' | 'on' | 'on+';
 
-/** Action types log/Discord can fire on. */
-export type FeatureAction =
-  | 'remove-post'
-  | 'remove-comment'
-  | 'sticky'
-  | 'transition-sticky'
-  | 'reapprove-post'
-  | 'schedule-check'
-  | 'skip'
-  | 'engagement-remove';
-
 /** True iff the mode counts as a non-acting log-only state. */
 export function isShadowMode(mode: Mode | BinaryMode): boolean {
-  return (
-    mode === 'shadow' || mode === 'shadow+' || mode === 'shadow+posts'
-  );
+  return mode === 'shadow' || mode === 'shadow+';
 }
 
 /** True iff the mode actually performs Reddit-visible actions. */
 export function isLiveMode(mode: Mode | BinaryMode): boolean {
-  return mode === 'on' || mode === 'on+' || mode === 'on+posts';
+  return mode === 'on' || mode === 'on+';
 }
 
-/**
- * True iff the mode should mirror this specific action to Discord. The
- * `+posts` variants suppress mirroring for comment-level actions
- * (currently just `remove-comment`).
- */
-export function shouldMirrorToDiscord(
-  mode: Mode | BinaryMode,
-  action: FeatureAction
-): boolean {
-  if (mode === 'shadow+' || mode === 'on+') return true;
-  if (mode === 'shadow+posts' || mode === 'on+posts') {
-    return action !== 'remove-comment';
-  }
-  return false;
+/** True iff the mode should mirror its log line to Discord. */
+export function shouldMirrorToDiscord(mode: Mode | BinaryMode): boolean {
+  return mode === 'shadow+' || mode === 'on+';
 }
 
 /** Feature names used in structured log lines. */
@@ -83,7 +45,8 @@ export type FeatureName =
 
 export const SETTING_DEFAULTS = {
   aiGateMode: 'off' as BinaryMode,
-  flairMode: 'off' as Mode,
+  flairPostMode: 'off' as Mode,
+  flairCommentMode: 'off' as Mode,
   engagementMode: 'off' as Mode,
   minKarmaMode: 'off' as Mode,
   minKarmaThreshold: 10,

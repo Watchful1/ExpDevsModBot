@@ -7,7 +7,8 @@ A Devvit moderation bot for [r/ExperiencedDevs](https://reddit.com/r/Experienced
 | Feature | Trigger | What it does |
 |---|---|---|
 | **AI disclosure gate** | `PostSubmit` | Removes new posts and stickies a comment asking OP to confirm whether/how they used AI tools. OP's reply to the sticky re-approves the post. |
-| **Flair required** | `PostSubmit`, `CommentSubmit` | Removes posts and comments by users without a user flair in the sub. |
+| **Flair required (posts)** | `PostSubmit` | Removes posts by users without a user flair in the sub. |
+| **Flair required (comments)** | `CommentSubmit` | Removes comments by users without a user flair in the sub. |
 | **OP engagement check** | scheduled job, `CommentSubmit` | If a post has ≥N comments at the engagement window mark but OP hasn't commented, removes it and stickies a notice. OP commenting later re-approves and restores the original sticky. |
 | **Minimum subreddit karma** | `PostSubmit` | Removes posts by users whose combined post + comment karma in this sub is below a threshold. |
 
@@ -76,7 +77,8 @@ Configured per install at `https://developers.reddit.com/r/<subreddit>/apps/expd
 | Key | Type | Default | Description |
 |---|---|---|---|
 | `aiGateMode` | off / on / on+ | off | AI disclosure gate. No shadow modes (binary effect). |
-| `flairMode` | off / shadow / shadow+posts / shadow+ / on / on+posts / on+ | off | Flair requirement for posts + comments. The `+posts` variants mirror only post removals to Discord; the plain `+` variants mirror posts and comments. |
+| `flairPostMode` | off / shadow / shadow+ / on / on+ | off | Flair requirement on posts. |
+| `flairCommentMode` | off / shadow / shadow+ / on / on+ | off | Flair requirement on comments. Also controls whether the AI sticky transitions to the flair-required PSA after OP confirms AI usage. |
 | `engagementMode` | off / shadow / shadow+ / on / on+ | off | 2-hour-ish OP-engagement check. |
 | `minKarmaMode` | off / shadow / shadow+ / on / on+ | off | Subreddit-karma gate on posts. |
 | `minKarmaThreshold` | number | 10 | Combined post + comment karma required. |
