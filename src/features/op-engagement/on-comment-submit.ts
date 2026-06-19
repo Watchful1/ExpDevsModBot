@@ -53,8 +53,20 @@ export async function run(
     return { removed: false };
   }
 
-  // Re-approve the post.
-  await approvePostById(input.postId as T3);
+  // Re-approve the post (no-op if someone other than us removed it).
+  const approved = await approvePostById(input.postId as T3);
+  if (!approved) {
+    logFeatureAction({
+      feature: 'op-engagement',
+      mode: settings.engagementMode,
+      action: 'skip',
+      postId: input.postId,
+      authorName: input.authorName,
+      reason:
+        'OP commented but post is removed by not-us; leaving Track B in place',
+    });
+    return { removed: false };
+  }
 
   // Delete the Track B sticky.
   try {

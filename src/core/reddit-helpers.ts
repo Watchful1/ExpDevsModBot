@@ -103,13 +103,33 @@ export async function removePostByUs(postId: T3): Promise<void> {
 }
 
 /**
- * Approve a post by id. No-op-safe if Reddit reports the post as not removed.
- * Caller is responsible for checking wasRemovedByHumanMod() first when needed.
+ * Approve a post by id, but only if the bot is the one that removed it.
+ *
+ * Returns true when we actually called approve(); false when we skipped
+ * because the post is currently removed and we have no `removed-by-us`
+ * marker (meaning someone else — human mod, AutoMod, Reddit anti-spam, or
+ * us before the 24h marker TTL expired — owns the current removal).
+ *
+ * This is the single chokepoint for "don't undo someone else's removal"; all
+ * re-approval paths go through here so no caller has to remember the check.
  */
-export async function approvePostById(postId: T3): Promise<void> {
-  const post = await reddit.getPostById(postId);
-  await post.approve();
+export async function approvePostById(postId: T3): Promise<boolean> {
+  const post = await withGrpcRetry(
+    () => reddit.getPostById(postId),
+    'approvePostById:getPostById'
+  );
+  if (post.removed) {
+    const ours = await wasRemovedByUs(postId);
+    if (!ours) {
+      console.log(
+        `[modbot] approvePostById skip postId=${postId} reason="removed by not-us; no removed-by-us marker"`
+      );
+      return false;
+    }
+  }
+  await withGrpcRetry(() => post.approve(), 'approvePostById:approve');
   await redis.del(REDIS_KEYS.removedByUs(postId));
+  return true;
 }
 
 /**

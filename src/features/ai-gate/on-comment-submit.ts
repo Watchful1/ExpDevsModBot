@@ -2,11 +2,7 @@ import { reddit } from '@devvit/web/server';
 import type { T3 } from '@devvit/shared-types/tid.js';
 import { isLiveMode } from '../../config';
 import { logFeatureAction } from '../../core/logging';
-import {
-  approvePostById,
-  wasRemovedByHumanMod,
-  type PostLike,
-} from '../../core/reddit-helpers';
+import { approvePostById } from '../../core/reddit-helpers';
 import type { ResolvedSettings } from '../../core/settings';
 import {
   getStickyState,
@@ -25,8 +21,9 @@ import type { CommentSubmitInput, FeatureResult } from '../types';
  * Idempotency: once the sticky has transitioned out of `awaiting-ai`, further
  * OP replies are no-ops because the state guard short-circuits.
  *
- * Human-mod removal respected: if `wasRemovedByHumanMod` returns true, we
- * still mark the sticky as `confirmed`/`flair-psa` but do NOT re-approve.
+ * Non-us removal respected: `approvePostById` declines to approve if the post
+ * is currently removed by anyone other than the bot. The sticky still
+ * transitions (OP did satisfy the gate) but the post stays removed.
  */
 export async function run(
   input: CommentSubmitInput,
@@ -39,15 +36,9 @@ export async function run(
 
   // Fetch the post to confirm the commenter is OP.
   let postAuthorId: string | undefined;
-  let postLike: PostLike;
   try {
     const post = await reddit.getPostById(input.postId);
     postAuthorId = post.authorId;
-    postLike = {
-      id: post.id,
-      removed: post.removed,
-      removedByCategory: post.removedByCategory,
-    };
   } catch (err) {
     console.warn(`ai-gate: failed to fetch post ${input.postId}`, err);
     return { removed: false };
@@ -62,31 +53,17 @@ export async function run(
   const flairOn = isLiveMode(settings.flairCommentMode);
   const nextState = nextStateAfterAiSatisfied({ flairOn });
 
-  // If a human mod removed the post in the meantime, transition the sticky
-  // (so it stops asking) but do NOT re-approve.
-  if (await wasRemovedByHumanMod(postLike)) {
-    await transitionSticky(input.postId as T3, nextState);
-    logFeatureAction({
-      feature: 'ai-gate',
-      mode: settings.aiGateMode,
-      action: 'transition-sticky',
-      postId: input.postId,
-      authorName: input.authorName,
-      reason: `OP replied but post was manually removed; not re-approving`,
-      extra: { newState: nextState },
-    });
-    return { removed: false };
-  }
-
-  await approvePostById(input.postId as T3);
+  const approved = await approvePostById(input.postId as T3);
   await transitionSticky(input.postId as T3, nextState);
   logFeatureAction({
     feature: 'ai-gate',
     mode: settings.aiGateMode,
-    action: 'reapprove-post',
+    action: approved ? 'reapprove-post' : 'transition-sticky',
     postId: input.postId,
     authorName: input.authorName,
-    reason: 'OP replied to awaiting-ai sticky',
+    reason: approved
+      ? 'OP replied to awaiting-ai sticky'
+      : 'OP replied but post is removed by not-us; not re-approving',
     extra: { newState: nextState },
   });
   return { removed: false };
