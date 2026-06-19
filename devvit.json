@@ -50,6 +50,34 @@
         ],
         "defaultValue": "off"
       },
+      "aiTopicDayMode": {
+        "type": "select",
+        "label": "AI-topic day gate",
+        "helpText": "Removes posts with an AI-topic link flair (e.g. 'AI/LLM') when submitted outside the allowed UTC weekdays (currently Wednesday and Saturday).",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
+          },
+          {
+            "label": "Shadow (log only)",
+            "value": "shadow"
+          },
+          {
+            "label": "Shadow + Discord (log + mirror to webhook)",
+            "value": "shadow+"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
+          }
+        ],
+        "defaultValue": "off"
+      },
       "flairPostMode": {
         "type": "select",
         "label": "Flair required on posts",

@@ -13,6 +13,7 @@ import {
  */
 export type ResolvedSettings = {
   aiGateMode: BinaryMode;
+  aiTopicDayMode: Mode;
   flairPostMode: Mode;
   flairCommentMode: Mode;
   engagementMode: Mode;
@@ -87,6 +88,10 @@ function coerceString(raw: unknown, fallback: string): string {
 function resolveFromRaw(raw: Record<string, unknown>): ResolvedSettings {
   return {
     aiGateMode: coerceBinaryMode(raw.aiGateMode, SETTING_DEFAULTS.aiGateMode),
+    aiTopicDayMode: coerceMode(
+      raw.aiTopicDayMode,
+      SETTING_DEFAULTS.aiTopicDayMode
+    ),
     flairPostMode: coerceMode(
       raw.flairPostMode,
       SETTING_DEFAULTS.flairPostMode

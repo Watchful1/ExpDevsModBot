@@ -39,12 +39,14 @@ export function shouldMirrorToDiscord(mode: Mode | BinaryMode): boolean {
 /** Feature names used in structured log lines. */
 export type FeatureName =
   | 'ai-gate'
+  | 'ai-topic-days'
   | 'flair-required'
   | 'op-engagement'
   | 'min-karma';
 
 export const SETTING_DEFAULTS = {
   aiGateMode: 'off' as BinaryMode,
+  aiTopicDayMode: 'off' as Mode,
   flairPostMode: 'off' as Mode,
   flairCommentMode: 'off' as Mode,
   engagementMode: 'off' as Mode,
@@ -54,6 +56,21 @@ export const SETTING_DEFAULTS = {
   engagementMinComments: 10,
   discordWebhookUrl: '',
 } as const;
+
+/**
+ * Post link-flair text values (case-insensitive) that mark a post as
+ * AI-topic. Posts with one of these flairs are only allowed on the days
+ * listed in AI_TOPIC_ALLOWED_DAYS_UTC.
+ */
+export const AI_TOPIC_FLAIR_NAMES: ReadonlySet<string> = new Set([
+  'ai/llm',
+]);
+
+/**
+ * UTC day-of-week (0 = Sunday … 6 = Saturday) on which AI-topic posts are
+ * permitted. Currently Wednesday (3) and Saturday (6).
+ */
+export const AI_TOPIC_ALLOWED_DAYS_UTC: ReadonlySet<number> = new Set([3, 6]);
 
 /** State of the Track A multipurpose sticky. */
 export type StickyState = 'awaiting-ai' | 'flair-psa' | 'confirmed';
@@ -117,6 +134,11 @@ export const REMOVAL_REASONS = {
     'r/ExperiencedDevs requires all posters to have a flair with your role. ' +
     'Since you do not have one, your post was removed. ' +
     'Set a flair in the subreddit sidebar or ... menu on mobile, and then post again.',
+  aiTopicDay:
+    'This flair is only allowed on wednesday, saturday (UTC). ' +
+    'Please repost on an allowed day. ' +
+    'Intentionally trying to circumvent this rule will result in a suspension. ' +
+    'See: https://www.reddit.com/r/ExperiencedDevs/comments/1rfhdrg/moderation_changes/',
 } as const;
 
 /**

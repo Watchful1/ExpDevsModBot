@@ -13,6 +13,7 @@ import { getStickyState } from '../core/sticky';
 
 import { run as aiGatePostSubmit } from '../features/ai-gate/on-post-submit';
 import { run as aiGateCommentSubmit } from '../features/ai-gate/on-comment-submit';
+import { run as aiTopicDaysPostSubmit } from '../features/ai-topic-days/on-post-submit';
 import { run as flairPostSubmit } from '../features/flair-required/on-post-submit';
 import { run as flairCommentSubmit } from '../features/flair-required/on-comment-submit';
 import { run as minKarmaPostSubmit } from '../features/min-karma/on-post-submit';
@@ -32,7 +33,12 @@ export const triggers = new Hono();
 // with `post`, `comment`, `author`, `subreddit` as optional fields. We define
 // just what we read.
 type UserV2Like = { id?: string; name?: string; flair?: { text?: string } };
-type PostV2Like = { id?: string; authorId?: string; authorFlair?: { text?: string } };
+type PostV2Like = {
+  id?: string;
+  authorId?: string;
+  authorFlair?: { text?: string };
+  linkFlair?: { text?: string };
+};
 type CommentV2Like = {
   id?: string;
   parentId?: string;
@@ -107,20 +113,25 @@ triggers.post('/on-post-submit', async (c) => {
   }
 
   const settings = await getSettings();
+  const postFlairText = post.linkFlair?.text?.trim() || undefined;
   console.log(
     `[modbot] on-post-submit settings postId=${postId} ` +
-      `aiGate=${settings.aiGateMode} flairPost=${settings.flairPostMode} flairComment=${settings.flairCommentMode} ` +
+      `aiGate=${settings.aiGateMode} aiTopicDays=${settings.aiTopicDayMode} ` +
+      `flairPost=${settings.flairPostMode} flairComment=${settings.flairCommentMode} ` +
       `engagement=${settings.engagementMode} minKarma=${settings.minKarmaMode} ` +
       `karmaThreshold=${settings.minKarmaThreshold} ` +
       `engagementWindow=${settings.engagementWindowMinutes}m ` +
       `engagementMinComments=${settings.engagementMinComments} ` +
-      `authorHasFlair=${hasNonEmpty(author.flair?.text) || hasNonEmpty(post.authorFlair?.text)}`
+      `authorHasFlair=${hasNonEmpty(author.flair?.text) || hasNonEmpty(post.authorFlair?.text)} ` +
+      `postFlair=${postFlairText ?? '(none)'}`
   );
   const input: PostSubmitInput = {
     postId,
     authorId: author.id,
     authorName: author.name,
-    authorHasFlair: hasNonEmpty(author.flair?.text) || hasNonEmpty(post.authorFlair?.text),
+    authorHasFlair:
+      hasNonEmpty(author.flair?.text) || hasNonEmpty(post.authorFlair?.text),
+    postFlairText,
   };
   const ctx: DispatchContext = { alreadyRemoved: false };
 
@@ -147,8 +158,18 @@ triggers.post('/on-post-submit', async (c) => {
   }
 
   try {
-    const r3 = await aiGatePostSubmit(input, settings, ctx);
+    const r3 = await aiTopicDaysPostSubmit(input, settings, ctx);
     if (r3.removed) ctx.alreadyRemoved = true;
+  } catch (err) {
+    console.error(
+      `[modbot] on-post-submit ai-topic-days error postId=${postId}`,
+      err
+    );
+  }
+
+  try {
+    const r4 = await aiGatePostSubmit(input, settings, ctx);
+    if (r4.removed) ctx.alreadyRemoved = true;
   } catch (err) {
     console.error(
       `[modbot] on-post-submit ai-gate error postId=${postId}`,

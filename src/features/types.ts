@@ -8,8 +8,10 @@ export type PostSubmitInput = {
   postId: T3;
   authorId: string;
   authorName: string;
-  authorHasFlair: boolean;
   /** True if the post had a user flair value on the event payload. */
+  authorHasFlair: boolean;
+  /** Trimmed post link-flair text (the topic flair), if any. */
+  postFlairText: string | undefined;
 };
 
 export type CommentSubmitInput = {
