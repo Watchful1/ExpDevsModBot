@@ -59,13 +59,44 @@ export async function wasRemovedByHumanMod(post: PostLike): Promise<boolean> {
 }
 
 /**
+ * gRPC code 2 (UNKNOWN) and 14 (UNAVAILABLE) typically mean a transient
+ * connection issue — most commonly an HTTP/2 GOAWAY from Reddit's backend
+ * gracefully closing a connection. Retrying once almost always succeeds.
+ */
+function isTransientGrpcError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = (err as { code?: unknown }).code;
+  return code === 2 || code === 14;
+}
+
+/**
+ * Run an async Reddit-API call; on a transient gRPC error, retry once.
+ * Non-transient errors propagate unchanged so callers can decide what to do.
+ */
+export async function withGrpcRetry<T>(
+  fn: () => Promise<T>,
+  label: string
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (!isTransientGrpcError(err)) throw err;
+    console.warn(`[modbot] ${label}: transient gRPC error, retrying once`, err);
+    return await fn();
+  }
+}
+
+/**
  * Remove a post and record the action so wasRemovedByHumanMod() won't
  * mistakenly conclude a human did it. Idempotent — re-removing a post that we
  * already removed simply refreshes the marker.
  */
 export async function removePostByUs(postId: T3): Promise<void> {
-  const post = await reddit.getPostById(postId);
-  await post.remove();
+  const post = await withGrpcRetry(
+    () => reddit.getPostById(postId),
+    'removePostByUs:getPostById'
+  );
+  await withGrpcRetry(() => post.remove(), 'removePostByUs:remove');
   await redis.set(REDIS_KEYS.removedByUs(postId), '1', {
     expiration: new Date(Date.now() + TTL.removedByUs * 1000),
   });

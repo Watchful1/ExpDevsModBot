@@ -6,6 +6,7 @@ import {
   TTL,
   type StickyState,
 } from '../config';
+import { withGrpcRetry } from './reddit-helpers';
 
 export type StickyRecord = {
   commentId: string;
@@ -88,11 +89,15 @@ export async function ensureSticky(
     return transitionSticky(postId, desiredState);
   }
 
-  const comment = await reddit.submitComment({
-    id: postId,
-    text: STICKY_BODIES[desiredState],
-    runAs: 'APP',
-  });
+  const comment = await withGrpcRetry(
+    () =>
+      reddit.submitComment({
+        id: postId,
+        text: STICKY_BODIES[desiredState],
+        runAs: 'APP',
+      }),
+    'ensureSticky:submitComment'
+  );
   try {
     await comment.distinguish(true);
   } catch (err) {

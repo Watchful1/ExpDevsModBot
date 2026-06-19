@@ -124,20 +124,46 @@ triggers.post('/on-post-submit', async (c) => {
   };
   const ctx: DispatchContext = { alreadyRemoved: false };
 
+  // Per-feature try/catch so a transient failure in one feature (e.g. a gRPC
+  // GOAWAY mid-call) doesn't skip later features like the AI gate sticky.
   try {
     const r1 = await minKarmaPostSubmit(input, settings, ctx);
     if (r1.removed) ctx.alreadyRemoved = true;
+  } catch (err) {
+    console.error(
+      `[modbot] on-post-submit min-karma error postId=${postId}`,
+      err
+    );
+  }
 
+  try {
     const r2 = await flairPostSubmit(input, settings, ctx);
     if (r2.removed) ctx.alreadyRemoved = true;
+  } catch (err) {
+    console.error(
+      `[modbot] on-post-submit flair-required error postId=${postId}`,
+      err
+    );
+  }
 
+  try {
     const r3 = await aiGatePostSubmit(input, settings, ctx);
     if (r3.removed) ctx.alreadyRemoved = true;
+  } catch (err) {
+    console.error(
+      `[modbot] on-post-submit ai-gate error postId=${postId}`,
+      err
+    );
+  }
 
+  try {
     // op-engagement always schedules; idempotent self-check at fire time.
     await opEngagementPostSubmit(input, settings);
   } catch (err) {
-    console.error('on-post-submit dispatcher error', err);
+    console.error(
+      `[modbot] on-post-submit op-engagement error postId=${postId}`,
+      err
+    );
   }
 
   return c.json<TriggerResponse>({ status: 'success' }, 200);
@@ -196,15 +222,31 @@ triggers.post('/on-comment-submit', async (c) => {
     body: comment.body ?? '',
   };
 
+  // Per-feature try/catch so a transient failure in one feature doesn't skip
+  // the others.
   try {
-    // 1. ai-gate: re-approve if OP replied to awaiting-ai sticky.
+    // ai-gate: re-approve if OP replied to awaiting-ai sticky.
     await aiGateCommentSubmit(input, settings);
+  } catch (err) {
+    console.error(
+      `[modbot] on-comment-submit ai-gate error commentId=${input.commentId}`,
+      err
+    );
+  }
 
-    // 2. op-engagement: re-approve if OP commented after engagement removal.
+  try {
+    // op-engagement: re-approve if OP commented after engagement removal.
     await opEngagementCommentSubmit(input, settings);
+  } catch (err) {
+    console.error(
+      `[modbot] on-comment-submit op-engagement error commentId=${input.commentId}`,
+      err
+    );
+  }
 
-    // 3. flair-required for comments — but exempt OP's reply to the Track A
-    //    sticky (otherwise we'd silently remove the AI-unlock comment).
+  try {
+    // flair-required for comments — but exempt OP's reply to the Track A
+    // sticky (otherwise we'd silently remove the AI-unlock comment).
     const trackA = await getStickyState(postId);
     const isOpReplyToTrackA =
       !!trackA &&
@@ -224,7 +266,10 @@ triggers.post('/on-comment-submit', async (c) => {
       await flairCommentSubmit(input, settings);
     }
   } catch (err) {
-    console.error('on-comment-submit dispatcher error', err);
+    console.error(
+      `[modbot] on-comment-submit flair-required error commentId=${input.commentId}`,
+      err
+    );
   }
 
   return c.json<TriggerResponse>({ status: 'success' }, 200);
