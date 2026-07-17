@@ -8,7 +8,7 @@
     "build": "vite build",
     "deploy": "npm run type-check && npm run lint && devvit upload",
     "dev": "devvit playtest",
-    "launch": "npm run deploy && devvit publish",
+    "launch": "npm run type-check && npm run lint && devvit publish",
     "lint": "eslint src",
     "login": "devvit login",
     "prettier": "prettier --write .",

@@ -112,8 +112,10 @@ Configured per install at `https://developers.reddit.com/r/<subreddit>/apps/expd
 - `npm test` — Vitest unit tests.
 - `npm run lint` — ESLint over `src/`.
 - `npm run build` — One-shot Vite build into `dist/`.
-- `npm run deploy` — Type-check, lint, then upload a new version.
-- `npm run launch` — Deploy + submit for Reddit review.
+- `npm run deploy` — Type-check, lint, then upload a new version. Uploaded-only versions are visible to the app owner and installable to test subs under 200 subscribers.
+- `npm run launch` — Type-check, lint, then `devvit publish`, which creates + uploads a version *and* files the review request. Don't chain `deploy` in front of it — `publish` does its own upload, and the second one errors.
+
+Publishing does not move an existing install to the new version. After the review request clears, run `devvit install <subreddit>` and confirm with `devvit list installs <subreddit>`.
 
 ## Operations
 
