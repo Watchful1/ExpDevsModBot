@@ -5,6 +5,7 @@ import {
   REDIS_KEYS,
   TTL,
 } from '../config';
+import { getAppAccountUsername } from './exemptions';
 
 /**
  * Minimal post-shape this module needs. Real Devvit Post objects have many
@@ -102,13 +103,87 @@ export async function removePostByUs(postId: T3): Promise<void> {
   });
 }
 
+export type ApprovalGateInput = {
+  /** Post is currently in a removed state. */
+  removed: boolean;
+  /** Reddit's username for whoever performed the current removal. */
+  removedBy: string | undefined;
+  /** Our app account's username. */
+  appAccount: string | undefined;
+  /** True if our `removed-by-us:<postId>` Redis marker is present. */
+  marker: boolean;
+};
+
+export type ApprovalGateResult = {
+  approve: boolean;
+  /** True when removedBy names an account that isn't us. */
+  removedBySomeoneElse: boolean;
+  reason: string;
+};
+
 /**
- * Approve a post by id, but only if the bot is the one that removed it.
+ * Decides whether it's safe to approve a post.
+ *
+ * `removedBy` is authoritative when Reddit populates it: it names the account
+ * that owns the *current* removal, which the Redis marker cannot tell us. The
+ * marker only records that we removed the post at some point in the last 24h,
+ * so it stays set even after another account re-removes the post — which is
+ * exactly how t3_1uydb9b got re-approved out from under u/experienceddevsb.
+ *
+ * When `removedBy` is absent (Reddit doesn't always populate it, e.g. for
+ * automod filtering) we fall back to the marker, which is no worse than the
+ * previous behavior.
+ */
+export function evaluateApprovalGate(
+  input: ApprovalGateInput
+): ApprovalGateResult {
+  if (!input.removed) {
+    return {
+      approve: true,
+      removedBySomeoneElse: false,
+      reason: 'post is not removed',
+    };
+  }
+
+  const remover = input.removedBy?.trim().toLowerCase();
+  const us = input.appAccount?.trim().toLowerCase();
+
+  if (remover && us) {
+    if (remover === us) {
+      return {
+        approve: true,
+        removedBySomeoneElse: false,
+        reason: 'current removal is ours (removedBy matches app account)',
+      };
+    }
+    return {
+      approve: false,
+      removedBySomeoneElse: true,
+      reason: `current removal belongs to u/${input.removedBy}`,
+    };
+  }
+
+  // removedBy unavailable — fall back to our own marker.
+  if (input.marker) {
+    return {
+      approve: true,
+      removedBySomeoneElse: false,
+      reason: 'removedBy unavailable; removed-by-us marker present',
+    };
+  }
+  return {
+    approve: false,
+    removedBySomeoneElse: false,
+    reason: 'removedBy unavailable and no removed-by-us marker',
+  };
+}
+
+/**
+ * Approve a post by id, but only if the bot owns the current removal.
  *
  * Returns true when we actually called approve(); false when we skipped
- * because the post is currently removed and we have no `removed-by-us`
- * marker (meaning someone else — human mod, AutoMod, Reddit anti-spam, or
- * us before the 24h marker TTL expired — owns the current removal).
+ * because someone else — another mod bot, a human mod, AutoMod, or Reddit
+ * anti-spam — owns the current removal.
  *
  * This is the single chokepoint for "don't undo someone else's removal"; all
  * re-approval paths go through here so no caller has to remember the check.
@@ -118,15 +193,26 @@ export async function approvePostById(postId: T3): Promise<boolean> {
     () => reddit.getPostById(postId),
     'approvePostById:getPostById'
   );
-  if (post.removed) {
-    const ours = await wasRemovedByUs(postId);
-    if (!ours) {
-      console.log(
-        `[modbot] approvePostById skip postId=${postId} reason="removed by not-us; no removed-by-us marker"`
-      );
-      return false;
+
+  const gate = evaluateApprovalGate({
+    removed: post.removed,
+    removedBy: post.removedBy,
+    appAccount: getAppAccountUsername(),
+    marker: post.removed ? await wasRemovedByUs(postId) : false,
+  });
+
+  if (!gate.approve) {
+    console.log(
+      `[modbot] approvePostById skip postId=${postId} removedBy=${post.removedBy ?? '(unknown)'} reason="${gate.reason}"`
+    );
+    // Our marker is stale — someone else's removal supersedes ours. Drop it so
+    // a later approve path can't be fooled by it either.
+    if (gate.removedBySomeoneElse) {
+      await redis.del(REDIS_KEYS.removedByUs(postId));
     }
+    return false;
   }
+
   await withGrpcRetry(() => post.approve(), 'approvePostById:approve');
   await redis.del(REDIS_KEYS.removedByUs(postId));
   return true;
