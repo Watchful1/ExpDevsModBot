@@ -127,8 +127,9 @@ export const ENGAGEMENT_REMOVAL_BODY = (windowMinutes: number) =>
 export const REMOVAL_REASONS = {
   minKarma:
     'Post automatically removed.\n\n' +
-    'r/ExperiencedDevs requires all posters to participate by commenting in the sub before they are eligible to post. ' +
-    'Comment on another post some and try again.',
+    'r/ExperiencedDevs requires all posters to be established participants in the community before they are eligible to post. ' +
+    'This is based on the karma your comments have earned in this subreddit, not the number of comments you have made, so a couple of comments is not enough. ' +
+    'Spend some time commenting on other posts and try again later.',
   flairMissing:
     'Post automatically removed.\n\n' +
     'r/ExperiencedDevs requires all posters to have a flair with your role. ' +
