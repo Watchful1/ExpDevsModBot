@@ -127,7 +127,7 @@ export const ENGAGEMENT_REMOVAL_BODY = (windowMinutes: number) =>
 export const REMOVAL_REASONS = {
   minKarma:
     'Post automatically removed.\n\n' +
-    'r/ExperiencedDevs requires all posters to be established participants in the community before they are eligible to post. ' +
+    'r/ExperiencedDevs requires all posters to be established participants in the community before they can post. ' +
     'Continue commenting on other posts for a couple days to be eligible to post.',
   flairMissing:
     'Post automatically removed.\n\n' +
