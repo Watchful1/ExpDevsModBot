@@ -12,7 +12,44 @@ export type StickyRecord = {
   commentId: string;
   state: StickyState;
   createdAt: number;
+  /**
+   * Whether the distinguish-sticky call actually landed. Absent on records
+   * written before this field existed, which is treated as "not stickied" so
+   * the next transition re-attempts the pin.
+   */
+  distinguished?: boolean;
 };
+
+/** Structural shape of the bits of a Devvit Comment we call here. */
+type DistinguishableComment = {
+  distinguish(sticky: boolean): Promise<unknown>;
+};
+
+/**
+ * Distinguish + sticky a comment, retrying once on a transient gRPC error.
+ * Returns whether the pin actually landed.
+ *
+ * Reddit intermittently 500s on Distinguish (gRPC code 2). Without a retry
+ * the comment stays posted but unpinned, which reads to moderators as "the
+ * bot never commented" — the comment is really there, just sorted like any
+ * other reply instead of held at the top.
+ */
+async function distinguishSticky(
+  comment: DistinguishableComment,
+  postId: string,
+  label: string
+): Promise<boolean> {
+  try {
+    await withGrpcRetry(() => comment.distinguish(true), label);
+    return true;
+  } catch (err) {
+    console.warn(
+      `[modbot] ${label} failed postId=${postId} reason="comment posted but not stickied"`,
+      err
+    );
+    return false;
+  }
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // Pure logic (unit-tested in sticky.test.ts)
@@ -98,15 +135,16 @@ export async function ensureSticky(
       }),
     'ensureSticky:submitComment'
   );
-  try {
-    await comment.distinguish(true);
-  } catch (err) {
-    console.warn('sticky.distinguish failed', err);
-  }
+  const distinguished = await distinguishSticky(
+    comment,
+    postId,
+    'ensureSticky:distinguish'
+  );
   const record: StickyRecord = {
     commentId: comment.id,
     state: desiredState,
     createdAt: Date.now(),
+    distinguished,
   };
   await writeStickyRecord(postId, record);
   return record;
@@ -127,13 +165,29 @@ export async function transitionSticky(
   if (existing.state === newState) {
     return existing;
   }
+  let distinguished = existing.distinguished === true;
   try {
-    const comment = await reddit.getCommentById(existing.commentId as `t1_${string}`);
-    await comment.edit({ text: STICKY_BODIES[newState] });
+    const comment = await withGrpcRetry(
+      () => reddit.getCommentById(existing.commentId as `t1_${string}`),
+      'transitionSticky:getCommentById'
+    );
+    await withGrpcRetry(
+      () => comment.edit({ text: STICKY_BODIES[newState] }),
+      'transitionSticky:edit'
+    );
+    // Self-heal: if the pin never landed when the sticky was created, retry
+    // it now that we have the comment in hand.
+    if (!distinguished) {
+      distinguished = await distinguishSticky(
+        comment,
+        postId,
+        'transitionSticky:distinguish'
+      );
+    }
   } catch (err) {
-    console.warn('sticky.edit failed', err);
+    console.warn(`[modbot] sticky.edit failed postId=${postId}`, err);
   }
-  const updated: StickyRecord = { ...existing, state: newState };
+  const updated: StickyRecord = { ...existing, state: newState, distinguished };
   await writeStickyRecord(postId, updated);
   return updated;
 }
@@ -146,10 +200,18 @@ export async function restickyTrackA(postId: string): Promise<void> {
   const existing = await getStickyState(postId);
   if (!existing) return;
   try {
-    const comment = await reddit.getCommentById(existing.commentId as `t1_${string}`);
-    await comment.distinguish(true);
+    const comment = await withGrpcRetry(
+      () => reddit.getCommentById(existing.commentId as `t1_${string}`),
+      'restickyTrackA:getCommentById'
+    );
+    const distinguished = await distinguishSticky(
+      comment,
+      postId,
+      'restickyTrackA:distinguish'
+    );
+    await writeStickyRecord(postId, { ...existing, distinguished });
   } catch (err) {
-    console.warn('sticky.restickyTrackA failed', err);
+    console.warn(`[modbot] sticky.restickyTrackA failed postId=${postId}`, err);
   }
 }
 

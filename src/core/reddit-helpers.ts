@@ -229,19 +229,32 @@ export async function postRemovalSticky(
   body: string
 ): Promise<string | undefined> {
   try {
-    const comment = await reddit.submitComment({
-      id: postId,
-      text: body,
-      runAs: 'APP',
-    });
+    const comment = await withGrpcRetry(
+      () =>
+        reddit.submitComment({
+          id: postId,
+          text: body,
+          runAs: 'APP',
+        }),
+      'postRemovalSticky:submitComment'
+    );
     try {
-      await comment.distinguish(true);
+      await withGrpcRetry(
+        () => comment.distinguish(true),
+        'postRemovalSticky:distinguish'
+      );
     } catch (err) {
-      console.warn('postRemovalSticky distinguish failed', err);
+      console.warn(
+        `[modbot] postRemovalSticky:distinguish failed postId=${postId} reason="comment posted but not stickied"`,
+        err
+      );
     }
     return comment.id;
   } catch (err) {
-    console.warn('postRemovalSticky submitComment failed', err);
+    console.warn(
+      `[modbot] postRemovalSticky:submitComment failed postId=${postId}`,
+      err
+    );
     return undefined;
   }
 }
