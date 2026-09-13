@@ -8,7 +8,8 @@
   "triggers": {
     "onAppInstall": "/internal/triggers/on-app-install",
     "onPostSubmit": "/internal/triggers/on-post-submit",
-    "onCommentSubmit": "/internal/triggers/on-comment-submit"
+    "onCommentSubmit": "/internal/triggers/on-comment-submit",
+    "onCommentUpdate": "/internal/triggers/on-comment-update"
   },
   "scheduler": {
     "tasks": {
@@ -25,6 +26,13 @@
         "location": "post",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/debug-state"
+      },
+      {
+        "label": "Modbot: purge redaction edits",
+        "description": "Sweep recently edited comments and remove any matching a configured redaction signature. Honors the Redaction cleanup mode setting.",
+        "location": "subreddit",
+        "forUserType": "moderator",
+        "endpoint": "/internal/menu/redaction-backfill"
       }
     ]
   },
@@ -189,6 +197,40 @@
           }
         ],
         "defaultValue": "off"
+      },
+      "redactionMode": {
+        "type": "select",
+        "label": "Redaction cleanup",
+        "helpText": "Removes comments whose body has been overwritten by a history-scrubbing tool (Redact, PowerDeleteSuite, etc.), detected on edit via the signature list below. Also gates the 'purge redaction edits' mod menu action.",
+        "options": [
+          {
+            "label": "Off",
+            "value": "off"
+          },
+          {
+            "label": "Shadow (log only)",
+            "value": "shadow"
+          },
+          {
+            "label": "Shadow + Discord (log + mirror to webhook)",
+            "value": "shadow+"
+          },
+          {
+            "label": "On",
+            "value": "on"
+          },
+          {
+            "label": "On + Discord (live + mirror to webhook)",
+            "value": "on+"
+          }
+        ],
+        "defaultValue": "off"
+      },
+      "redactionSignatures": {
+        "type": "paragraph",
+        "label": "Redaction signatures",
+        "helpText": "One regular expression per line, matched case-insensitively against the edited comment body. Blank lines and lines starting with # are ignored; a line that fails to compile is skipped and logged. Match on the tool's attribution footer, not on the filler text.",
+        "defaultValue": "anonymized with \\[?Redact"
       },
       "minKarmaThreshold": {
         "type": "number",

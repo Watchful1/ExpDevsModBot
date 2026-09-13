@@ -19,11 +19,13 @@ import { run as flairCommentSubmit } from '../features/flair-required/on-comment
 import { run as minKarmaPostSubmit } from '../features/min-karma/on-post-submit';
 import { run as opEngagementPostSubmit } from '../features/op-engagement/on-post-submit';
 import { run as opEngagementCommentSubmit } from '../features/op-engagement/on-comment-submit';
+import { run as redactionCommentUpdate } from '../features/redaction-cleanup/on-comment-update';
 
 import type {
   CommentSubmitInput,
   DispatchContext,
   PostSubmitInput,
+  RedactionCandidate,
 } from '../features/types';
 
 export const triggers = new Hono();
@@ -57,6 +59,9 @@ type CommentSubmitBody = {
   comment?: CommentV2Like;
   author?: UserV2Like;
 };
+
+/** Mirrors EventTypes.CommentUpdate; `comment.body` is the post-edit body. */
+type CommentUpdateBody = CommentSubmitBody & { previousBody?: string };
 
 function hasNonEmpty(text: string | undefined): boolean {
   return typeof text === 'string' && text.trim().length > 0;
@@ -289,6 +294,60 @@ triggers.post('/on-comment-submit', async (c) => {
   } catch (err) {
     console.error(
       `[modbot] on-comment-submit flair-required error commentId=${input.commentId}`,
+      err
+    );
+  }
+
+  return c.json<TriggerResponse>({ status: 'success' }, 200);
+});
+
+triggers.post('/on-comment-update', async (c) => {
+  let body: CommentUpdateBody;
+  try {
+    body = await c.req.json<CommentUpdateBody>();
+  } catch {
+    return c.json<TriggerResponse>({ status: 'success' }, 200);
+  }
+
+  const comment = body.comment;
+  const author = body.author;
+  if (!comment?.id || !comment?.postId || !author?.name) {
+    return c.json<TriggerResponse>({ status: 'success' }, 200);
+  }
+
+  console.log(
+    `[modbot] on-comment-update received commentId=${comment.id} postId=${comment.postId} author=${author.name}`
+  );
+
+  // No idempotency claim here, deliberately: a comment can legitimately be
+  // edited more than once (a normal edit, then a redaction overwrite), and a
+  // per-commentId claim would make us skip the second one. Removal is
+  // idempotent, so a duplicate delivery costs at most a duplicate log line.
+
+  const appSlug = getAppAccountUsername();
+  if (appSlug && author.name.toLowerCase() === appSlug.toLowerCase()) {
+    return c.json<TriggerResponse>({ status: 'success' }, 200);
+  }
+  if (await isModerator(author.name)) {
+    console.log(
+      `[modbot] on-comment-update skip commentId=${comment.id} author=${author.name} reason="author is moderator"`
+    );
+    return c.json<TriggerResponse>({ status: 'success' }, 200);
+  }
+
+  const settings = await getSettings();
+  const candidate: RedactionCandidate = {
+    commentId: comment.id,
+    postId: comment.postId as T3,
+    authorName: author.name,
+    body: comment.body ?? '',
+  };
+
+  try {
+    await redactionCommentUpdate(candidate, settings);
+  } catch (err) {
+    console.error(
+      `[modbot] on-comment-update redaction-cleanup error commentId=${comment.id}`,
       err
     );
   }

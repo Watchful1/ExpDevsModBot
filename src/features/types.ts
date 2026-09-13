@@ -24,6 +24,18 @@ export type CommentSubmitInput = {
   body: string;
 };
 
+/**
+ * A comment being evaluated by redaction-cleanup. Built from either the
+ * CommentUpdate trigger payload or a Comment object during backfill, so the
+ * same decide/apply path serves both.
+ */
+export type RedactionCandidate = {
+  commentId: string;
+  postId: T3;
+  authorName: string;
+  body: string;
+};
+
 export type FeatureResult = {
   /** True if this feature caused (or would have caused) post removal. */
   removed: boolean;

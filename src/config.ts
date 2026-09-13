@@ -42,7 +42,16 @@ export type FeatureName =
   | 'ai-topic-days'
   | 'flair-required'
   | 'op-engagement'
-  | 'min-karma';
+  | 'min-karma'
+  | 'redaction-cleanup';
+
+/**
+ * Default body signatures for comment-overwriting "delete my history" tools.
+ * One regex per line, case-insensitive. Only Redact is included because its
+ * footer has been observed verbatim in the sub; add other tools' footers via
+ * the setting once a real example is in hand rather than guessing.
+ */
+export const DEFAULT_REDACTION_SIGNATURES = 'anonymized with \\[?Redact';
 
 export const SETTING_DEFAULTS = {
   aiGateMode: 'off' as BinaryMode,
@@ -51,11 +60,20 @@ export const SETTING_DEFAULTS = {
   flairCommentMode: 'off' as Mode,
   engagementMode: 'off' as Mode,
   minKarmaMode: 'off' as Mode,
+  redactionMode: 'off' as Mode,
   minKarmaThreshold: 10,
   engagementWindowMinutes: 120,
   engagementMinComments: 10,
   discordWebhookUrl: '',
+  redactionSignatures: DEFAULT_REDACTION_SIGNATURES,
 } as const;
+
+/**
+ * Upper bound on edited comments the backfill menu action will scan in one
+ * click. Menu handlers have a bounded execution window; a cap keeps a huge
+ * "edited" listing from timing out mid-pass. Re-click to continue.
+ */
+export const REDACTION_BACKFILL_MAX_ITEMS = 500;
 
 /**
  * Post link-flair text values (case-insensitive) that mark a post as

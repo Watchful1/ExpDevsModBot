@@ -18,10 +18,13 @@ export type ResolvedSettings = {
   flairCommentMode: Mode;
   engagementMode: Mode;
   minKarmaMode: Mode;
+  redactionMode: Mode;
   minKarmaThreshold: number;
   engagementWindowMinutes: number;
   engagementMinComments: number;
   discordWebhookUrl: string;
+  /** Raw multi-line signature list; parsed by the redaction-cleanup feature. */
+  redactionSignatures: string;
 };
 
 /**
@@ -105,6 +108,10 @@ function resolveFromRaw(raw: Record<string, unknown>): ResolvedSettings {
       SETTING_DEFAULTS.engagementMode
     ),
     minKarmaMode: coerceMode(raw.minKarmaMode, SETTING_DEFAULTS.minKarmaMode),
+    redactionMode: coerceMode(
+      raw.redactionMode,
+      SETTING_DEFAULTS.redactionMode
+    ),
     minKarmaThreshold: coerceNumber(
       raw.minKarmaThreshold,
       SETTING_DEFAULTS.minKarmaThreshold
@@ -120,6 +127,10 @@ function resolveFromRaw(raw: Record<string, unknown>): ResolvedSettings {
     discordWebhookUrl: coerceString(
       raw.discordWebhookUrl,
       SETTING_DEFAULTS.discordWebhookUrl
+    ),
+    redactionSignatures: coerceString(
+      raw.redactionSignatures,
+      SETTING_DEFAULTS.redactionSignatures
     ),
   };
 }

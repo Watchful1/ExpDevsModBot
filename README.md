@@ -11,6 +11,7 @@ A Devvit moderation bot for [r/ExperiencedDevs](https://reddit.com/r/Experienced
 | **Flair required (comments)** | `CommentSubmit` | Removes comments by users without a user flair in the sub. |
 | **OP engagement check** | scheduled job, `CommentSubmit` | If a post has ≥N comments at the engagement window mark but OP hasn't commented, removes it and stickies a notice. OP commenting later re-approves and restores the original sticky. |
 | **Minimum subreddit karma** | `PostSubmit` | Removes posts by users whose combined post + comment karma in this sub is below a threshold. |
+| **Redaction cleanup** | `CommentUpdate`, mod menu | Removes comments whose body has been overwritten by a history-scrubbing tool (Redact etc.), matched against a configurable signature list. A subreddit-level mod menu action sweeps the "edited" listing to clear the backlog. |
 
 Mods (including the app account itself) are exempt from every check. Each feature has a mode setting that controls behavior, with a `+` suffix flag that also mirrors the action to a configured Discord webhook:
 
@@ -84,6 +85,8 @@ Configured per install at `https://developers.reddit.com/r/<subreddit>/apps/expd
 | `minKarmaThreshold` | number | 10 | Combined post + comment karma required. |
 | `engagementWindowMinutes` | number | 120 | Window before the engagement check fires. |
 | `engagementMinComments` | number | 10 | Minimum total comments before engagement check will remove. |
+| `redactionMode` | off / shadow / shadow+ / on / on+ | off | Remove comments overwritten by history-scrubbing tools. Also gates the "purge redaction edits" menu action. |
+| `redactionSignatures` | paragraph | `anonymized with \[?Redact` | One case-insensitive regex per line, tested against the edited comment body. Blank lines and `#` comments ignored; a malformed line is skipped and logged. Match the tool's attribution footer, not the filler text. |
 | `discordWebhookUrl` | string | "" | Optional Discord webhook URL. Required for the `+` suffix modes to actually deliver mirrored notifications. |
 
 ## Setup
@@ -147,6 +150,10 @@ A mod-only post menu item, "Modbot: dump post state," dumps the bot's Redis keys
 - `removed-by-us:<id>` — marker indicating the bot performed the most recent removal (used by the human-mod-override guard).
 
 The full JSON is also written to `devvit logs` as `[modbot] [debug-state] {...}`.
+
+### Redaction backfill
+
+The `CommentUpdate` trigger only sees edits made after it's live. To clear the backlog, use the subreddit-level mod menu item **"Modbot: purge redaction edits"**. It pages the subreddit's "edited" mod listing (`reddit.getEdited`), applies the same signature check as the trigger, and reports counts in a toast. It honors `redactionMode` — in shadow it reports what it *would* remove, in off it refuses — so it can't bypass a feature that's switched off. The sweep is capped at 500 comments per click to stay inside the menu handler's execution window; the toast says when to click again.
 
 ### Discord mirroring
 
